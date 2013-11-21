@@ -94,7 +94,7 @@ static char * ngx_http_logid_merge_loc_conf(ngx_conf_t *cf, void *parent, void *
     ngx_http_logid_loc_conf_t *conf = child;
 
     ngx_conf_merge_value( conf->enable, prev->enable, 0 );
-    ngx_conf_merge_str_value( conf->header_name, prev->header_name, "X-Ngx-OperationId");
+    ngx_conf_merge_str_value( conf->header_name, prev->header_name, "X-Ngx-LogId");
 
     return NGX_CONF_OK;
 }
@@ -129,7 +129,7 @@ ngx_http_logid_get_logid(ngx_http_request_t *r, ngx_http_logid_loc_conf_t *conf)
         ngx_http_set_ctx(r, ctx, ngx_http_logid_module);
     }
 
-    /* look for operation id header in request */
+    /* look for log id header in request */
     part = &r->headers_in.headers.part;
     header = part->elts;
     for ( i = 0 ; ; i++ ) {
