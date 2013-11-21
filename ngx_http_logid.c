@@ -234,6 +234,7 @@ ngx_http_logid_init_worker(ngx_cycle_t *cycle)
 
     /* use the most significant usec part that fits to 16 bits */
     start_value = (uint16_t)ngx_pid;
+    sequencer_v2 = (uint16_t)(tp.tv_usec / 20);
 
     return NGX_OK;
 }
