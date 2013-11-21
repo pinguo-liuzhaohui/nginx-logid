@@ -112,8 +112,9 @@ ngx_http_logid_get_logid(ngx_http_request_t *r, ngx_http_logid_loc_conf_t *conf)
 
     ngx_connection_t     *c;
     struct sockaddr_in   *sin;
-    uint16_t             rid[4];
+    uint16_t             rid[5];
     u_char               *rid_as_pc;
+    uint32_t             tm;
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_logid_module);
     if (ctx) {
@@ -161,17 +162,19 @@ ngx_http_logid_get_logid(ngx_http_request_t *r, ngx_http_logid_loc_conf_t *conf)
     }
 
     sin = (struct sockaddr_in *) c->local_sockaddr;
-    rid[0] = (uint16_t)sin->sin_addr.s_addr;
-    rid[1] = (uint16_t)htonl((uint32_t) ngx_time());
-    rid[2] = (uint16_t)htons(start_value);
-    rid[3] = (uint16_t)htons(sequencer_v2);
+    tm = htonl((uint32_t)ngx_time());
+    rid[0] = (uint16_t)((sin->sin_addr.s_addr & 0x0000FFFF) + sin->sin_addr.s_addr >> 16);
+    rid[1] = (uint16_t)tm;
+    rid[2] = (uint16_t)(tm>>16);
+    rid[3] = (uint16_t)htons(start_value);
+    rid[4] = (uint16_t)htons(sequencer_v2);
 
     sequencer_v2 ++;
 
-    ctx->logid = (u_char*) ngx_pcalloc(r->pool, 17);
-    ctx->logid[16] = 0;
+    ctx->logid = (u_char*) ngx_pcalloc(r->pool, 21);
+    ctx->logid[20] = 0;
     rid_as_pc = (u_char *) rid;
-    for(i=0; i<8; i++) {
+    for(i=0; i<10; i++) {
         ctx->logid[2*i]   = hex[rid_as_pc[i] >> 4];
         ctx->logid[2*i+1] = hex[rid_as_pc[i] & 0xf];
     }
