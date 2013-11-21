@@ -26,8 +26,8 @@ static void * ngx_http_logid_create_loc_conf(ngx_conf_t *cf);
 static char * ngx_http_logid_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child);
 static ngx_int_t ngx_http_logid_init_worker(ngx_cycle_t *cycle);
 
-static uint32_t  start_value;
-static uint32_t  sequencer_v2 = 0x03030302;
+static uint16_t  start_value;
+static uint16_t  sequencer_v2 = 0x0;
 
 static ngx_command_t  ngx_http_logid_commands[] = {
     { ngx_string( "logid" ),
@@ -112,7 +112,7 @@ ngx_http_logid_get_logid(ngx_http_request_t *r, ngx_http_logid_loc_conf_t *conf)
 
     ngx_connection_t     *c;
     struct sockaddr_in   *sin;
-    uint32_t             rid[4];
+    uint16_t             rid[4];
     u_char               *rid_as_pc;
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_logid_module);
@@ -161,20 +161,17 @@ ngx_http_logid_get_logid(ngx_http_request_t *r, ngx_http_logid_loc_conf_t *conf)
     }
 
     sin = (struct sockaddr_in *) c->local_sockaddr;
-    rid[0] = sin->sin_addr.s_addr;
-    rid[1] = htonl((uint32_t) ngx_time());
-    rid[2] = htonl(start_value);
-    rid[3] = htonl(sequencer_v2);
+    rid[0] = (uint16_t)sin->sin_addr.s_addr;
+    rid[1] = (uint16_t)htonl((uint32_t) ngx_time());
+    rid[2] = (uint16_t)htons(start_value);
+    rid[3] = (uint16_t)htons(sequencer_v2);
 
-    sequencer_v2 += 0x100;
-    if (sequencer_v2 < 0x03030302) {
-        sequencer_v2 = 0x03030302;
-    }
+    sequencer_v2 ++;
 
-    ctx->logid = (u_char*) ngx_pcalloc(r->pool, 33);
-    ctx->logid[32] = 0;
+    ctx->logid = (u_char*) ngx_pcalloc(r->pool, 17);
+    ctx->logid[16] = 0;
     rid_as_pc = (u_char *) rid;
-    for(i=0; i<16; i++) {
+    for(i=0; i<8; i++) {
         ctx->logid[2*i]   = hex[rid_as_pc[i] >> 4];
         ctx->logid[2*i+1] = hex[rid_as_pc[i] & 0xf];
     }
@@ -233,7 +230,7 @@ ngx_http_logid_init_worker(ngx_cycle_t *cycle)
     ngx_gettimeofday(&tp);
 
     /* use the most significant usec part that fits to 16 bits */
-    start_value = ((tp.tv_usec / 20) << 16) | ngx_pid;
+    start_value = (uint16_t)ngx_pid;
 
     return NGX_OK;
 }
