@@ -163,7 +163,7 @@ ngx_http_logid_get_logid(ngx_http_request_t *r, ngx_http_logid_loc_conf_t *conf)
 
     sin = (struct sockaddr_in *) c->local_sockaddr;
     tm = htonl((uint32_t)ngx_time());
-    rid[0] = (uint16_t)((sin->sin_addr.s_addr & 0x0000FFFF) + sin->sin_addr.s_addr >> 16);
+    rid[0] = (uint16_t)(((uint32_t)sin->sin_addr.s_addr & 0x0000FFFF) + ((uint32_t)sin->sin_addr.s_addr>>16));
     rid[1] = (uint16_t)tm;
     rid[2] = (uint16_t)(tm>>16);
     rid[3] = (uint16_t)htons(start_value);
